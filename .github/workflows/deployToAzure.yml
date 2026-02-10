@@ -1,0 +1,46 @@
+# The name of the workflow as it appears in the GitHub Actions tab
+name: DeployToAzure
+
+# WHEN: Define the events that trigger the workflow
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# WHERE: Define the execution environment
+jobs:
+  build-and-test:
+    # This specifies the type of runner the job will run on
+    runs-on: ubuntu-latest
+
+    # WHAT: The sequence of tasks (steps) to execute
+    steps:
+      # 1. Pulls your code from the repository onto the runner
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: Azure/login@v2
+        with:
+          # Ensure you have a secret named AZURE_CREDENTIALS in your repo settings
+          creds: ${{ secrets.AZURE_CREDENTIALS_Internal }}
+          enable-AzPSSession: true
+          
+      - name: Azure PowerShell Action
+        uses: Azure/powershell@v2
+        with:
+          inlineScript: New-AzResourceGroup -Name rg-github-om -location CentralUS -Force
+          azPSVersion: "latest"
+      
+      - name: Deploy Azure Resource Manager (ARM) Template
+        uses: Azure/arm-deploy@v2
+        with:
+          # Provide the scope of the deployment. Valid values are: 'resourcegroup', 'tenant', 'managementgroup', 'subscription'
+          scope: resourcegroup
+   
+          resourceGroupName: rg-github-om
+          # Specify the path or URL to the Azure Resource Manager template.
+          template: main.bicep
+          
+            
