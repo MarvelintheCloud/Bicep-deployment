@@ -28,13 +28,29 @@ jobs:
           # Ensure you have a secret named AZURE_CREDENTIALS in your repo settings
           creds: ${{ secrets.AZURE_CREDENTIALS_Internal }}
           enable-AzPSSession: true
+        
+      - name: build the bicep file into arm
+        uses: Azure/cli@v2.2.0
+        with:
+          # Specify the script here
+          inlineScript: az bicep build --file main.bicep --outfile ./main.json
           
+  
       - name: Create the ResourceGroup
         uses: Azure/powershell@v2
         with:
           inlineScript: New-AzResourceGroup -Name ${{ env.resourceGroupName }} -location CentralUS -Force
           azPSVersion: "latest"
-      
+
+      - name: perform What-If test
+        uses: Azure/powershell@v2
+        with:
+          # Specify the Az PowerShell script here.
+          inlineScript: New-AzResourceGroupDeployment -ResouceGroupName ${{ env.resourceGroupName }} -TemplateFile main.bicep -WhatIf
+          # Azure PS version to be used to execute the script, example: 1.8.0, 2.8.0, 3.4.0. To use the latest version, specify "latest".
+          azPSVersion: latest
+          
+          
       - name: Deploy Azure Resource Manager (ARM) Template
         uses: Azure/arm-deploy@v2
         with:
@@ -43,7 +59,7 @@ jobs:
    
           resourceGroupName: ${{ env.resourceGroupName }}
           # Specify the path or URL to the Azure Resource Manager template.
-          template: main.bicep
+          template: main.json
           # Supply deployment parameter values.
           parameters: storageAccountName=ghactionom
           deploymentName: "gh${{github.run_id}}"
