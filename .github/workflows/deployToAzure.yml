@@ -42,5 +42,7 @@ jobs:
           resourceGroupName: rg-github-om
           # Specify the path or URL to the Azure Resource Manager template.
           template: main.bicep
+          # Supply deployment parameter values.
+          parameters: storageAccountName=ghaction
           
             
